@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway-proxy
+  namespace: default
+  labels:
+    app: gateway-proxy
+    environment: gateway
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gateway-proxy
+  template:
+    metadata:
+      labels:
+        app: gateway-proxy
+        environment: gateway
+    spec:
+      containers:
+      - name: nginx-proxy
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "100m"
+          limits:
+            memory: "128Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: gateway-nginx-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gateway-nginx-config
+  namespace: default
+data:
+  default.conf: |
+    server {
+        listen 80;
+        server_name localhost;
+
+        location / {
+            # Forward requests to backend service
+            # Note: In production, this would use service discovery or DNS
+            # For this PoC, we'll use the backend service's cluster IP
+            proxy_pass http://backend-service.backend.svc.cluster.local;
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+        }
+    }
