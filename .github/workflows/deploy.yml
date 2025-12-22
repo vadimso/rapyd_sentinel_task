@@ -82,6 +82,21 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-west-2
 
+    - name: Check Infrastructure Exists
+      run: |
+        echo "Checking if EKS clusters exist..."
+        aws eks describe-cluster --region us-west-2 --name eks-backend > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+          echo "Backend cluster not found - infrastructure deployment may have failed"
+          exit 1
+        fi
+        aws eks describe-cluster --region us-west-2 --name eks-gateway > /dev/null 2>&1
+        if [ $? -ne 0 ]; then
+          echo "Gateway cluster not found - infrastructure deployment may have failed"
+          exit 1
+        fi
+        echo "Infrastructure clusters found - proceeding with validation"
+
     - name: Validate Backend Manifests
       run: |
         aws eks update-kubeconfig --region us-west-2 --name eks-backend
