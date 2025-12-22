@@ -16,12 +16,12 @@ provider "aws" {
 module "vpc_gateway" {
   source = "./modules/vpc"
 
-  name             = "vpc-gateway"
-  cidr_block       = "10.0.0.0/16"
-  private_subnets  = ["10.0.1.0/24", "10.0.2.0/24"]
+  name               = "vpc-gateway"
+  cidr_block         = "10.0.0.0/16"
+  private_subnets    = ["10.0.1.0/24", "10.0.2.0/24"]
   enable_nat_gateway = true
   enable_s3_endpoint = true
-  region           = var.region
+  region             = var.region
 
   tags = {
     Environment = "gateway"
@@ -33,12 +33,12 @@ module "vpc_gateway" {
 module "vpc_backend" {
   source = "./modules/vpc"
 
-  name             = "vpc-backend"
-  cidr_block       = "10.1.0.0/16"
-  private_subnets  = ["10.1.1.0/24", "10.1.2.0/24"]
+  name               = "vpc-backend"
+  cidr_block         = "10.1.0.0/16"
+  private_subnets    = ["10.1.1.0/24", "10.1.2.0/24"]
   enable_nat_gateway = true
   enable_s3_endpoint = true
-  region           = var.region
+  region             = var.region
 
   tags = {
     Environment = "backend"
@@ -52,7 +52,7 @@ resource "aws_vpc_peering_connection" "gateway_backend" {
   peer_vpc_id = module.vpc_backend.vpc_id
 
   tags = {
-    Name = "gateway-backend-peering"
+    Name    = "gateway-backend-peering"
     Project = "rapyd-sentinel"
   }
 }
@@ -63,7 +63,7 @@ resource "aws_vpc_peering_connection_accepter" "gateway_backend" {
   auto_accept               = true
 
   tags = {
-    Name = "gateway-backend-peering"
+    Name    = "gateway-backend-peering"
     Project = "rapyd-sentinel"
   }
 }
@@ -86,12 +86,12 @@ resource "aws_route" "backend_to_gateway" {
 module "eks_gateway" {
   source = "./modules/eks"
 
-  cluster_name       = "eks-gateway"
-  vpc_id             = module.vpc_gateway.vpc_id
-  subnet_ids         = module.vpc_gateway.private_subnets
-  kubernetes_version = "1.28"
-  desired_nodes      = 2
-  instance_type      = "t3.medium"
+  cluster_name        = "eks-gateway"
+  vpc_id              = module.vpc_gateway.vpc_id
+  subnet_ids          = module.vpc_gateway.private_subnets
+  kubernetes_version  = "1.28"
+  desired_nodes       = 2
+  instance_type       = "t3.medium"
   peering_cidr_blocks = [module.vpc_backend.vpc_cidr_block]
 
   tags = {
@@ -104,12 +104,12 @@ module "eks_gateway" {
 module "eks_backend" {
   source = "./modules/eks"
 
-  cluster_name       = "eks-backend"
-  vpc_id             = module.vpc_backend.vpc_id
-  subnet_ids         = module.vpc_backend.private_subnets
-  kubernetes_version = "1.28"
-  desired_nodes      = 2
-  instance_type      = "t3.medium"
+  cluster_name        = "eks-backend"
+  vpc_id              = module.vpc_backend.vpc_id
+  subnet_ids          = module.vpc_backend.private_subnets
+  kubernetes_version  = "1.28"
+  desired_nodes       = 2
+  instance_type       = "t3.medium"
   peering_cidr_blocks = [module.vpc_gateway.vpc_cidr_block]
 
   tags = {
@@ -124,7 +124,7 @@ resource "aws_route_table" "gateway_private" {
   vpc_id = module.vpc_gateway.vpc_id
 
   tags = {
-    Name = "gateway-private-${count.index}"
+    Name    = "gateway-private-${count.index}"
     Project = "rapyd-sentinel"
   }
 }
@@ -134,7 +134,7 @@ resource "aws_route_table" "backend_private" {
   vpc_id = module.vpc_backend.vpc_id
 
   tags = {
-    Name = "backend-private-${count.index}"
+    Name    = "backend-private-${count.index}"
     Project = "rapyd-sentinel"
   }
 }
