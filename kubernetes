@@ -1,0 +1,4 @@
+<script>start("/Users/vadimsohin/rapyd_sentinel_task/kubernetes/");</script>
+<script>onHasParentDirectory();</script>
+<script>addRow("backend","backend",1,128,"128 B",1766387755,"12/22/25, 9:15:55 AM");</script>
+<script>addRow("gateway","gateway",1,128,"128 B",1766387773,"12/22/25, 9:16:13 AM");</script>
