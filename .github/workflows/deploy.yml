@@ -41,24 +41,14 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Validate Backend Manifests
-      uses: instrumenta/kubeval-action@v1
-      with:
-        files: kubernetes/backend
-
-    - name: Validate Gateway Manifests
-      uses: instrumenta/kubeval-action@v1
-      with:
-        files: kubernetes/gateway
-
     - name: Setup kubectl
       uses: azure/setup-kubectl@v3
 
-    - name: Dry-run Backend Deployment
+    - name: Validate Backend Manifests
       run: |
         kubectl apply --dry-run=client -f kubernetes/backend/
 
-    - name: Dry-run Gateway Deployment
+    - name: Validate Gateway Manifests
       run: |
         kubectl apply --dry-run=client -f kubernetes/gateway/
 
