@@ -35,27 +35,10 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-  validate-kubernetes:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-
-    - name: Setup kubectl
-      uses: azure/setup-kubectl@v3
-
-    - name: Validate Backend Manifests
-      run: |
-        kubectl apply --dry-run=client -f kubernetes/backend/
-
-    - name: Validate Gateway Manifests
-      run: |
-        kubectl apply --dry-run=client -f kubernetes/gateway/
-
   deploy-infrastructure:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    needs: [validate-terraform, validate-kubernetes]
+    needs: validate-terraform
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -81,10 +64,38 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-  deploy-applications:
+  validate-kubernetes:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     needs: deploy-infrastructure
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-west-2
+
+    - name: Validate Backend Manifests
+      run: |
+        aws eks update-kubeconfig --region us-west-2 --name eks-backend
+        kubectl apply --dry-run=client -f kubernetes/backend/
+
+    - name: Validate Gateway Manifests
+      run: |
+        aws eks update-kubeconfig --region us-west-2 --name eks-gateway
+        kubectl apply --dry-run=client -f kubernetes/gateway/
+
+  deploy-applications:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    needs: [deploy-infrastructure, validate-kubernetes]
     steps:
     - name: Checkout
       uses: actions/checkout@v4
