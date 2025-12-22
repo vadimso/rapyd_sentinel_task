@@ -2,9 +2,9 @@ name: Deploy Rapyd Sentinel
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   validate-terraform:
@@ -60,7 +60,7 @@ jobs:
 
   deploy-infrastructure:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     needs: [validate-terraform, validate-kubernetes]
     steps:
     - name: Checkout
@@ -89,7 +89,7 @@ jobs:
 
   deploy-applications:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     needs: deploy-infrastructure
     steps:
     - name: Checkout
