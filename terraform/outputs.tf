@@ -1,11 +1,11 @@
-output "gateway_vpc_id" {
-  description = "ID of the gateway VPC"
-  value       = module.vpc_gateway.vpc_id
+output "vpc_id" {
+  description = "ID of the main VPC"
+  value       = module.vpc_main.vpc_id
 }
 
-output "backend_vpc_id" {
-  description = "ID of the backend VPC"
-  value       = module.vpc_backend.vpc_id
+output "vpc_cidr_block" {
+  description = "CIDR block of the main VPC"
+  value       = module.vpc_main.vpc_cidr_block
 }
 
 output "gateway_cluster_name" {
@@ -28,7 +28,12 @@ output "backend_cluster_endpoint" {
   value       = module.eks_backend.cluster_endpoint
 }
 
-output "vpc_peering_connection_id" {
-  description = "ID of the VPC peering connection"
-  value       = aws_vpc_peering_connection.gateway_backend.id
+output "gateway_subnets" {
+  description = "Subnets used by gateway cluster"
+  value       = slice(module.vpc_main.private_subnets, 0, 2)
+}
+
+output "backend_subnets" {
+  description = "Subnets used by backend cluster"
+  value       = slice(module.vpc_main.private_subnets, 2, 4)
 }

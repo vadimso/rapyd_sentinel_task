@@ -12,89 +12,36 @@ provider "aws" {
   region = var.region
 }
 
-# Gateway VPC
-module "vpc_gateway" {
+# Single VPC for both environments (avoids VPC limit)
+module "vpc_main" {
   source = "./modules/vpc"
 
-  name               = "vpc-gateway-poc"
+  name               = "vpc-rapyd-sentinel-poc"
   cidr_block         = "10.0.0.0/16"
-  private_subnets    = ["10.0.1.0/24", "10.0.2.0/24"]
-  enable_nat_gateway = false # Disable to avoid IGW limit
+  private_subnets    = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24", "10.0.4.0/24"]
+  enable_nat_gateway = false  # Disable to avoid IGW limit
   enable_s3_endpoint = true
   region             = var.region
 
   tags = {
-    Environment = "gateway"
+    Environment = "production"
     Project     = "rapyd-sentinel"
   }
 }
 
-# Backend VPC
-module "vpc_backend" {
-  source = "./modules/vpc"
-
-  name               = "vpc-backend-poc"
-  cidr_block         = "10.1.0.0/16"
-  private_subnets    = ["10.1.1.0/24", "10.1.2.0/24"]
-  enable_nat_gateway = false # Disable to avoid IGW limit
-  enable_s3_endpoint = true
-  region             = var.region
-
-  tags = {
-    Environment = "backend"
-    Project     = "rapyd-sentinel"
-  }
-}
-
-# VPC Peering
-resource "aws_vpc_peering_connection" "gateway_backend" {
-  vpc_id      = module.vpc_gateway.vpc_id
-  peer_vpc_id = module.vpc_backend.vpc_id
-
-  tags = {
-    Name    = "gateway-backend-peering"
-    Project = "rapyd-sentinel"
-  }
-}
-
-# Accept the peering connection
-resource "aws_vpc_peering_connection_accepter" "gateway_backend" {
-  vpc_peering_connection_id = aws_vpc_peering_connection.gateway_backend.id
-  auto_accept               = true
-
-  tags = {
-    Name    = "gateway-backend-peering"
-    Project = "rapyd-sentinel"
-  }
-}
-
-# Route table entries for gateway VPC
-resource "aws_route" "gateway_to_backend" {
-  route_table_id            = module.vpc_gateway.default_route_table_id
-  destination_cidr_block    = module.vpc_backend.vpc_cidr_block
-  vpc_peering_connection_id = aws_vpc_peering_connection.gateway_backend.id
-}
-
-# Route table entries for backend VPC
-resource "aws_route" "backend_to_gateway" {
-  route_table_id            = module.vpc_backend.default_route_table_id
-  destination_cidr_block    = module.vpc_gateway.vpc_cidr_block
-  vpc_peering_connection_id = aws_vpc_peering_connection.gateway_backend.id
-}
-
-# Gateway EKS Cluster
+# Gateway EKS Cluster (uses first 2 subnets)
 module "eks_gateway" {
   source = "./modules/eks"
 
   cluster_name        = "eks-gateway-poc"
-  vpc_id              = module.vpc_gateway.vpc_id
-  subnet_ids          = module.vpc_gateway.private_subnets
+  vpc_id              = module.vpc_main.vpc_id
+  subnet_ids          = slice(module.vpc_main.private_subnets, 0, 2)  # First 2 subnets
   kubernetes_version  = "1.27"
   desired_nodes       = 2
   min_nodes           = 1
   max_nodes           = 3
   instance_type       = "t3.medium"
-  peering_cidr_blocks = [module.vpc_backend.vpc_cidr_block]
+  peering_cidr_blocks = []  # No peering needed in single VPC
 
   tags = {
     Environment = "gateway"
@@ -102,19 +49,19 @@ module "eks_gateway" {
   }
 }
 
-# Backend EKS Cluster
+# Backend EKS Cluster (uses last 2 subnets)
 module "eks_backend" {
   source = "./modules/eks"
 
   cluster_name        = "eks-backend-poc"
-  vpc_id              = module.vpc_backend.vpc_id
-  subnet_ids          = module.vpc_backend.private_subnets
+  vpc_id              = module.vpc_main.vpc_id
+  subnet_ids          = slice(module.vpc_main.private_subnets, 2, 4)  # Last 2 subnets
   kubernetes_version  = "1.27"
   desired_nodes       = 2
   min_nodes           = 1
   max_nodes           = 3
   instance_type       = "t3.medium"
-  peering_cidr_blocks = [module.vpc_gateway.vpc_cidr_block]
+  peering_cidr_blocks = []  # No peering needed in single VPC
 
   tags = {
     Environment = "backend"
