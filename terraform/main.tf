@@ -16,10 +16,10 @@ provider "aws" {
 module "vpc_gateway" {
   source = "./modules/vpc"
 
-  name               = "vpc-gateway-poc"
+  name               = "vpc-gateway-prod"
   cidr_block         = "10.0.0.0/16"
   private_subnets    = ["10.0.1.0/24", "10.0.2.0/24"]
-  enable_nat_gateway = false # Disable to avoid IGW limit
+  enable_nat_gateway = false  # Disable to avoid IGW limit
   enable_s3_endpoint = true
   region             = var.region
 
@@ -33,10 +33,10 @@ module "vpc_gateway" {
 module "vpc_backend" {
   source = "./modules/vpc"
 
-  name               = "vpc-backend-poc"
+  name               = "vpc-backend-prod"
   cidr_block         = "10.1.0.0/16"
   private_subnets    = ["10.1.1.0/24", "10.1.2.0/24"]
-  enable_nat_gateway = false # Disable to avoid IGW limit
+  enable_nat_gateway = false  # Disable to avoid IGW limit
   enable_s3_endpoint = true
   region             = var.region
 
@@ -86,7 +86,7 @@ resource "aws_route" "backend_to_gateway" {
 module "eks_gateway" {
   source = "./modules/eks"
 
-  cluster_name        = "eks-gateway-poc"
+  cluster_name        = "eks-gateway-prod"
   vpc_id              = module.vpc_gateway.vpc_id
   subnet_ids          = module.vpc_gateway.private_subnets
   kubernetes_version  = "1.27"
@@ -106,7 +106,7 @@ module "eks_gateway" {
 module "eks_backend" {
   source = "./modules/eks"
 
-  cluster_name        = "eks-backend-poc"
+  cluster_name        = "eks-backend-prod"
   vpc_id              = module.vpc_backend.vpc_id
   subnet_ids          = module.vpc_backend.private_subnets
   kubernetes_version  = "1.27"
