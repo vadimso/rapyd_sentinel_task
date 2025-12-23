@@ -70,16 +70,14 @@ resource "aws_vpc_peering_connection_accepter" "gateway_backend" {
 
 # Route table entries for gateway VPC
 resource "aws_route" "gateway_to_backend" {
-  for_each                   = toset(module.vpc_gateway.private_route_table_ids)
-  route_table_id             = each.value
+  route_table_id             = module.vpc_gateway.default_route_table_id
   destination_cidr_block     = module.vpc_backend.vpc_cidr_block
   vpc_peering_connection_id  = aws_vpc_peering_connection.gateway_backend.id
 }
 
 # Route table entries for backend VPC
 resource "aws_route" "backend_to_gateway" {
-  for_each                   = toset(module.vpc_backend.private_route_table_ids)
-  route_table_id             = each.value
+  route_table_id             = module.vpc_backend.default_route_table_id
   destination_cidr_block     = module.vpc_gateway.vpc_cidr_block
   vpc_peering_connection_id  = aws_vpc_peering_connection.gateway_backend.id
 }
