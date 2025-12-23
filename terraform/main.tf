@@ -70,16 +70,16 @@ resource "aws_vpc_peering_connection_accepter" "gateway_backend" {
 
 # Route table entries for gateway VPC
 resource "aws_route" "gateway_to_backend" {
-  for_each                   = { for idx, rt in aws_route_table.gateway_private : idx => rt }
-  route_table_id             = each.value.id
+  for_each                   = toset(module.vpc_gateway.private_route_table_ids)
+  route_table_id             = each.value
   destination_cidr_block     = module.vpc_backend.vpc_cidr_block
   vpc_peering_connection_id  = aws_vpc_peering_connection.gateway_backend.id
 }
 
 # Route table entries for backend VPC
 resource "aws_route" "backend_to_gateway" {
-  for_each                   = { for idx, rt in aws_route_table.backend_private : idx => rt }
-  route_table_id             = each.value.id
+  for_each                   = toset(module.vpc_backend.private_route_table_ids)
+  route_table_id             = each.value
   destination_cidr_block     = module.vpc_gateway.vpc_cidr_block
   vpc_peering_connection_id  = aws_vpc_peering_connection.gateway_backend.id
 }
@@ -121,26 +121,5 @@ module "eks_backend" {
   tags = {
     Environment = "backend"
     Project     = "rapyd-sentinel"
-  }
-}
-
-# Additional route tables for peering (simplified approach)
-resource "aws_route_table" "gateway_private" {
-  count  = length(module.vpc_gateway.private_subnets)
-  vpc_id = module.vpc_gateway.vpc_id
-
-  tags = {
-    Name    = "gateway-private-${count.index}"
-    Project = "rapyd-sentinel"
-  }
-}
-
-resource "aws_route_table" "backend_private" {
-  count  = length(module.vpc_backend.private_subnets)
-  vpc_id = module.vpc_backend.vpc_id
-
-  tags = {
-    Name    = "backend-private-${count.index}"
-    Project = "rapyd-sentinel"
   }
 }
