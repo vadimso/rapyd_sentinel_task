@@ -154,9 +154,12 @@ resource "aws_eks_node_group" "this" {
 
   instance_types = [var.instance_type]
 
-  remote_access {
-    ec2_ssh_key               = var.ssh_key_name
-    source_security_group_ids = [aws_security_group.eks_nodes.id]
+  dynamic "remote_access" {
+    for_each = var.ssh_key_name != null && var.ssh_key_name != "" ? [1] : []
+    content {
+      ec2_ssh_key               = var.ssh_key_name
+      source_security_group_ids = [aws_security_group.eks_nodes.id]
+    }
   }
 
   depends_on = [
