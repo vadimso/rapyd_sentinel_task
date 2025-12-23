@@ -19,7 +19,7 @@ module "vpc_gateway" {
   name               = "vpc-gateway"
   cidr_block         = "10.0.0.0/16"
   private_subnets    = ["10.0.1.0/24", "10.0.2.0/24"]
-  enable_nat_gateway = true
+  enable_nat_gateway = false  # Disable to avoid IGW limit
   enable_s3_endpoint = true
   region             = var.region
 
@@ -36,7 +36,7 @@ module "vpc_backend" {
   name               = "vpc-backend"
   cidr_block         = "10.1.0.0/16"
   private_subnets    = ["10.1.1.0/24", "10.1.2.0/24"]
-  enable_nat_gateway = true
+  enable_nat_gateway = false  # Disable to avoid IGW limit
   enable_s3_endpoint = true
   region             = var.region
 
@@ -89,7 +89,7 @@ module "eks_gateway" {
   cluster_name        = "eks-gateway"
   vpc_id              = module.vpc_gateway.vpc_id
   subnet_ids          = module.vpc_gateway.private_subnets
-  kubernetes_version  = "1.28"
+  kubernetes_version  = "1.27"
   desired_nodes       = 2
   instance_type       = "t3.medium"
   peering_cidr_blocks = [module.vpc_backend.vpc_cidr_block]
@@ -107,7 +107,7 @@ module "eks_backend" {
   cluster_name        = "eks-backend"
   vpc_id              = module.vpc_backend.vpc_id
   subnet_ids          = module.vpc_backend.private_subnets
-  kubernetes_version  = "1.28"
+  kubernetes_version  = "1.27"
   desired_nodes       = 2
   instance_type       = "t3.medium"
   peering_cidr_blocks = [module.vpc_gateway.vpc_cidr_block]
