@@ -70,16 +70,18 @@ resource "aws_vpc_peering_connection_accepter" "gateway_backend" {
 
 # Route table entries for gateway VPC
 resource "aws_route" "gateway_to_backend" {
-  route_table_id            = module.vpc_gateway.private_subnets[0] == module.vpc_gateway.private_subnets[0] ? aws_route_table.gateway_private[0].id : aws_route_table.gateway_private[0].id
-  destination_cidr_block    = module.vpc_backend.vpc_cidr_block
-  vpc_peering_connection_id = aws_vpc_peering_connection.gateway_backend.id
+  for_each                   = { for idx, rt in aws_route_table.gateway_private : idx => rt }
+  route_table_id             = each.value.id
+  destination_cidr_block     = module.vpc_backend.vpc_cidr_block
+  vpc_peering_connection_id  = aws_vpc_peering_connection.gateway_backend.id
 }
 
 # Route table entries for backend VPC
 resource "aws_route" "backend_to_gateway" {
-  route_table_id            = module.vpc_backend.private_subnets[0] == module.vpc_backend.private_subnets[0] ? aws_route_table.backend_private[0].id : aws_route_table.backend_private[0].id
-  destination_cidr_block    = module.vpc_gateway.vpc_cidr_block
-  vpc_peering_connection_id = aws_vpc_peering_connection.gateway_backend.id
+  for_each                   = { for idx, rt in aws_route_table.backend_private : idx => rt }
+  route_table_id             = each.value.id
+  destination_cidr_block     = module.vpc_gateway.vpc_cidr_block
+  vpc_peering_connection_id  = aws_vpc_peering_connection.gateway_backend.id
 }
 
 # Gateway EKS Cluster
@@ -91,6 +93,8 @@ module "eks_gateway" {
   subnet_ids          = module.vpc_gateway.private_subnets
   kubernetes_version  = "1.27"
   desired_nodes       = 2
+  min_nodes           = 1
+  max_nodes           = 3
   instance_type       = "t3.medium"
   peering_cidr_blocks = [module.vpc_backend.vpc_cidr_block]
 
@@ -109,6 +113,8 @@ module "eks_backend" {
   subnet_ids          = module.vpc_backend.private_subnets
   kubernetes_version  = "1.27"
   desired_nodes       = 2
+  min_nodes           = 1
+  max_nodes           = 3
   instance_type       = "t3.medium"
   peering_cidr_blocks = [module.vpc_gateway.vpc_cidr_block]
 
