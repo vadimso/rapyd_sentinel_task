@@ -19,7 +19,7 @@ module "vpc_gateway" {
   name               = "vpc-gateway-poc"
   cidr_block         = "10.0.0.0/16"
   private_subnets    = ["10.0.1.0/24", "10.0.2.0/24"]
-  enable_nat_gateway = false  # Disable to avoid IGW limit
+  enable_nat_gateway = false # Disable to avoid IGW limit
   enable_s3_endpoint = true
   region             = var.region
 
@@ -36,7 +36,7 @@ module "vpc_backend" {
   name               = "vpc-backend-poc"
   cidr_block         = "10.1.0.0/16"
   private_subnets    = ["10.1.1.0/24", "10.1.2.0/24"]
-  enable_nat_gateway = false  # Disable to avoid IGW limit
+  enable_nat_gateway = false # Disable to avoid IGW limit
   enable_s3_endpoint = true
   region             = var.region
 
@@ -70,16 +70,16 @@ resource "aws_vpc_peering_connection_accepter" "gateway_backend" {
 
 # Route table entries for gateway VPC
 resource "aws_route" "gateway_to_backend" {
-  route_table_id             = module.vpc_gateway.default_route_table_id
-  destination_cidr_block     = module.vpc_backend.vpc_cidr_block
-  vpc_peering_connection_id  = aws_vpc_peering_connection.gateway_backend.id
+  route_table_id            = module.vpc_gateway.default_route_table_id
+  destination_cidr_block    = module.vpc_backend.vpc_cidr_block
+  vpc_peering_connection_id = aws_vpc_peering_connection.gateway_backend.id
 }
 
 # Route table entries for backend VPC
 resource "aws_route" "backend_to_gateway" {
-  route_table_id             = module.vpc_backend.default_route_table_id
-  destination_cidr_block     = module.vpc_gateway.vpc_cidr_block
-  vpc_peering_connection_id  = aws_vpc_peering_connection.gateway_backend.id
+  route_table_id            = module.vpc_backend.default_route_table_id
+  destination_cidr_block    = module.vpc_gateway.vpc_cidr_block
+  vpc_peering_connection_id = aws_vpc_peering_connection.gateway_backend.id
 }
 
 # Gateway EKS Cluster
