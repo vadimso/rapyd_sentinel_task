@@ -85,12 +85,12 @@ jobs:
     - name: Check Infrastructure Exists
       run: |
         echo "Checking if EKS clusters exist..."
-        aws eks describe-cluster --region us-west-2 --name eks-backend > /dev/null 2>&1
+        aws eks describe-cluster --region us-west-2 --name eks-backend-poc > /dev/null 2>&1
         if [ $? -ne 0 ]; then
           echo "Backend cluster not found - infrastructure deployment may have failed"
           exit 1
         fi
-        aws eks describe-cluster --region us-west-2 --name eks-gateway > /dev/null 2>&1
+        aws eks describe-cluster --region us-west-2 --name eks-gateway-poc > /dev/null 2>&1
         if [ $? -ne 0 ]; then
           echo "Gateway cluster not found - infrastructure deployment may have failed"
           exit 1
@@ -99,12 +99,12 @@ jobs:
 
     - name: Validate Backend Manifests
       run: |
-        aws eks update-kubeconfig --region us-west-2 --name eks-backend
+        aws eks update-kubeconfig --region us-west-2 --name eks-backend-poc
         kubectl apply --dry-run=client -f kubernetes/backend/
 
     - name: Validate Gateway Manifests
       run: |
-        aws eks update-kubeconfig --region us-west-2 --name eks-gateway
+        aws eks update-kubeconfig --region us-west-2 --name eks-gateway-poc
         kubectl apply --dry-run=client -f kubernetes/gateway/
 
   deploy-applications:
@@ -127,7 +127,7 @@ jobs:
 
     - name: Update kubeconfig for backend cluster
       run: |
-        aws eks update-kubeconfig --region us-west-2 --name eks-backend
+        aws eks update-kubeconfig --region us-west-2 --name eks-backend-poc
 
     - name: Deploy Backend Service
       run: |
@@ -139,7 +139,7 @@ jobs:
 
     - name: Update kubeconfig for gateway cluster
       run: |
-        aws eks update-kubeconfig --region us-west-2 --name eks-gateway
+        aws eks update-kubeconfig --region us-west-2 --name eks-gateway-poc
 
     - name: Deploy Gateway Proxy
       run: |
